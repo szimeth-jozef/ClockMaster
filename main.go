@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 )
 
 func main() {
@@ -29,6 +30,7 @@ func main() {
 	app := echo.New()
 	app.HideBanner = true
 
+	app.Use(middleware.CORS())
 	app.Static("/", "client/dist")
 
 	// Register routes
