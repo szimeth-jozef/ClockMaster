@@ -16,7 +16,7 @@
 
 <header>
     <Navbar class="border-b">
-        <NavBrand href="/">
+        <NavBrand href="#/">
             <svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" height="100" viewBox="0 0 48 48" class="me-3 h-6 sm:h-9">
                 <path fill="#00acc1" d="M44,24c0,11.044-8.956,20-20,20S4,35.044,4,24S12.956,4,24,4S44,12.956,44,24z"></path>
                 <path fill="#eee" d="M40,24c0,8.838-7.162,16-16,16S8,32.838,8,24S15.163,8,24,8S40,15.163,40,24z"></path>
@@ -41,6 +41,5 @@
           <NavLi href="#/">Home</NavLi>
           <NavLi href="#/invoices">Invoices</NavLi>
         </NavUl>
-        <!-- <DarkMode /> -->
     </Navbar>
 </header>

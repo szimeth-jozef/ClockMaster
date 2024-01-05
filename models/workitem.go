@@ -23,6 +23,14 @@ type WorkItem struct {
 	WorkDays   []WorkDay
 }
 
+func (wi WorkItem) GetTotalTime() time.Duration {
+	var totalTime time.Duration
+	for _, workDay := range wi.WorkDays {
+		totalTime += workDay.TotalDuration
+	}
+	return totalTime
+}
+
 func (wi WorkItem) GetWorkDayForDate(date time.Time) *WorkDay {
 	for _, workDay := range wi.WorkDays {
 		if workDay.IsSameDateAs(date) {
@@ -30,4 +38,13 @@ func (wi WorkItem) GetWorkDayForDate(date time.Time) *WorkDay {
 		}
 	}
 	return nil
+}
+
+func (wi WorkItem) IsRunning() bool {
+	for _, workDay := range wi.WorkDays {
+		if workDay.LastStartedAt != nil {
+			return true
+		}
+	}
+	return false
 }

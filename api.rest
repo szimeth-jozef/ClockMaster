@@ -7,9 +7,9 @@ POST http://localhost:8080/api/workitem HTTP/1.1
 Content-Type: application/json
 
 {
-  "name": "Example work item with init total duration",
-  "period_month": 2024,
-  "period_year": 1,
+  "name": "Example work item",
+  "period_year": 2024,
+  "period_month": 1,
   "init_total_duration_in_seconds": 12
 }
 

@@ -25,14 +25,27 @@ func (h WorkItemHandler) GetWorkItems(e echo.Context) error {
 
 	p, err := period.FromString(year + "-" + month)
 	if err != nil {
-		log.Warn(err)
+		log.Warn("Parsing string to period: " + err.Error())
 
 		p = period.New()
 	}
 
-	var workItems []models.WorkItem
+	var dbWorkItems []models.WorkItem
+	h.DB.Preload("WorkDays").Where("period = ?", p.String()).Find(&dbWorkItems)
 
-	h.DB.Where("period = ?", p.String()).Find(&workItems)
+	var workItems []response.WorkItemResponse
+	for _, workItem := range dbWorkItems {
+		workItems = append(workItems, response.WorkItemResponse{
+			ID:                   workItem.ID,
+			Created:              workItem.CreatedAt,
+			Name:                 workItem.Name,
+			Status:               workItem.Status,
+			Period:               workItem.Period,
+			IsInvoiced:           workItem.IsInvoiced,
+			TotalTimeNanoseconds: workItem.GetTotalTime(),
+			IsRunning:            workItem.IsRunning(),
+		})
+	}
 
 	response := response.WorkItemsOfPeriod{
 		Period:    p,

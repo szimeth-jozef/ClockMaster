@@ -1,16 +1,10 @@
 <script lang="ts">
-    import Navbar from '../components/Navbar.svelte'
+    import BaseLayout from '../components/BaseLayout.svelte'
 </script>
 
-<header>
-    <Navbar />
-</header>
-
-<main>
+<BaseLayout>
     Invoices
-</main>
-
-<footer></footer>
+</BaseLayout>
 
 <style>
 </style>

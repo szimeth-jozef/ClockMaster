@@ -17,7 +17,7 @@ type WorkItemService struct {
 }
 
 func (s WorkItemService) Create(data request.CreateWorkItemData) (*models.WorkItem, error) {
-	p, err := period.FromPart(data.PeriodMonth, data.PeriodYear)
+	p, err := period.FromPart(data.PeriodYear, data.PeriodMonth)
 	if err != nil {
 		return nil, err
 	}

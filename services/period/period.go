@@ -6,8 +6,8 @@ import (
 )
 
 type InvoicePeriod struct {
-	Year  int
-	Month int
+	Year  int `json:"year"`
+	Month int `json:"month"`
 }
 
 func New() InvoicePeriod {
@@ -20,8 +20,12 @@ func New() InvoicePeriod {
 }
 
 func FromPart(year, month int) (InvoicePeriod, error) {
-	if year < 0 || month < 1 || month > 12 {
-		return InvoicePeriod{}, fmt.Errorf("invalid year or month")
+	if year < 0 {
+		return InvoicePeriod{}, fmt.Errorf("invalid year")
+	}
+
+	if month < 1 || month > 12 {
+		return InvoicePeriod{}, fmt.Errorf("invalid month")
 	}
 
 	return InvoicePeriod{
@@ -31,8 +35,12 @@ func FromPart(year, month int) (InvoicePeriod, error) {
 }
 
 func FromString(period string) (InvoicePeriod, error) {
+	if len(period) < 3 {
+		return InvoicePeriod{}, fmt.Errorf("invalid period string")
+	}
+
 	var year, month int
-	_, err := fmt.Sscanf(period, "%d-%02d", &year, &month)
+	_, err := fmt.Sscanf(period, "%d-%d", &year, &month)
 	if err != nil {
 		return InvoicePeriod{}, err
 	}
