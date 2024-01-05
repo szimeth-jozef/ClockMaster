@@ -24,8 +24,6 @@
 
         const data = await resp.json() as StatusResponse
 
-        console.log(data)
-
         if (data.isRunning) {
             runningWorkItem.start(data.workItem, data.deltaDurationNanoseconds)
         }

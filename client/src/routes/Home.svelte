@@ -135,8 +135,6 @@
             init_total_duration_in_seconds: durationSeconds
         }
 
-        console.log(payload)
-
         const resp = await fetch('http://localhost:8080/api/workitem', {
             method: 'POST',
             headers: {
@@ -162,13 +160,10 @@
             }
 
             workItems = data.workItems || []
-            console.log(data)
         })
     }
 
     const unsubscribePeriod = period.subscribe(value => {
-        console.log(value)
-
         getWorkItems(value).then(data => {
             const responsePeriod = data.period
             if (responsePeriod.month - 1 !== value.month || responsePeriod.year !== value.year) {
@@ -176,7 +171,6 @@
             }
 
             workItems = data.workItems || []
-            console.log(data)
         })
     })
 
@@ -200,7 +194,6 @@
             }
 
             workItems = data.workItems || []
-            console.log(data)
         })
     })
 

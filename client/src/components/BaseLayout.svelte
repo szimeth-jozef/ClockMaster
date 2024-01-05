@@ -4,6 +4,8 @@
     import { runningWorkItem } from '../stores/RunningWorkItemStore'
     import toast from 'svelte-french-toast'
 
+    export let hideRunningWorkItem: boolean = false
+
     const formatTimerSegment = (segment: number) => {
         return String(segment).padStart(2, '0')
     }
@@ -30,7 +32,7 @@
 <main class="container mx-auto mt-4">
     <slot />
 </main>
-{#if $runningWorkItem.isRunning}
+{#if $runningWorkItem.isRunning && !hideRunningWorkItem}
     <Card class="fixed bottom-4 left-4">
         <P class="text-center" weight="bold">{$runningWorkItem.workItem?.period.year}-{$runningWorkItem.workItem?.period.month}</P>
         <P class="text-center" weight="semibold">#{$runningWorkItem.workItem?.id}</P>
