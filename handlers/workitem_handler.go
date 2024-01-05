@@ -31,7 +31,11 @@ func (h WorkItemHandler) GetWorkItems(e echo.Context) error {
 	}
 
 	var dbWorkItems []models.WorkItem
-	h.DB.Preload("WorkDays").Where("period = ?", p.String()).Find(&dbWorkItems)
+	h.DB.
+		Preload("WorkDays").
+		Where("period_year = ?", p.Year).
+		Where("period_month = ?", p.Month).
+		Find(&dbWorkItems)
 
 	var workItems []response.WorkItemResponse
 	for _, workItem := range dbWorkItems {
@@ -40,7 +44,7 @@ func (h WorkItemHandler) GetWorkItems(e echo.Context) error {
 			Created:              workItem.CreatedAt,
 			Name:                 workItem.Name,
 			Status:               workItem.Status,
-			Period:               workItem.Period,
+			Period:               period.InvoicePeriod{Year: workItem.PeriodYear, Month: workItem.PeriodMonth},
 			IsInvoiced:           workItem.IsInvoiced,
 			TotalTimeNanoseconds: workItem.GetTotalTime(),
 			IsRunning:            workItem.IsRunning(),
@@ -68,7 +72,18 @@ func (h WorkItemHandler) CreateWorkItem(e echo.Context) error {
 		return e.JSON(http.StatusBadRequest, nil)
 	}
 
-	return e.JSON(http.StatusOK, workItem)
+	response := response.WorkItemResponse{
+		ID:                   workItem.ID,
+		Created:              workItem.CreatedAt,
+		Name:                 workItem.Name,
+		Status:               workItem.Status,
+		Period:               period.InvoicePeriod{Year: workItem.PeriodYear, Month: workItem.PeriodMonth},
+		IsInvoiced:           workItem.IsInvoiced,
+		TotalTimeNanoseconds: workItem.GetTotalTime(),
+		IsRunning:            workItem.IsRunning(),
+	}
+
+	return e.JSON(http.StatusOK, response)
 }
 
 func (h WorkItemHandler) StartWorkItem(e echo.Context) error {
@@ -160,6 +175,34 @@ func (h WorkItemHandler) DeleteWorkItem(e echo.Context) error {
 	h.DB.Delete(&workItem)
 
 	return e.JSON(http.StatusOK, nil)
+}
+
+func (h WorkItemHandler) GetStatus(e echo.Context) error {
+	workItem, workDay := h.GetRunningWorkItemWithWorkDay()
+	if workItem == nil || workDay == nil {
+		return e.JSON(http.StatusOK, response.StatusResponse{
+			IsRunning:                false,
+			DeltaDurationNanoseconds: nil,
+			WorkItem:                 nil,
+		})
+	}
+
+	deltaDuration := time.Since(*workDay.LastStartedAt)
+
+	return e.JSON(http.StatusOK, response.StatusResponse{
+		IsRunning:                true,
+		DeltaDurationNanoseconds: &deltaDuration,
+		WorkItem: &response.WorkItemResponse{
+			ID:                   workItem.ID,
+			Created:              workItem.CreatedAt,
+			Name:                 workItem.Name,
+			Status:               workItem.Status,
+			Period:               period.InvoicePeriod{Year: workItem.PeriodYear, Month: workItem.PeriodMonth},
+			IsInvoiced:           workItem.IsInvoiced,
+			TotalTimeNanoseconds: workItem.GetTotalTime(),
+			IsRunning:            workItem.IsRunning(),
+		},
+	})
 }
 
 func (h WorkItemHandler) ExistsRunningWorkItem() bool {

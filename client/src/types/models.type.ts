@@ -3,7 +3,7 @@ export interface WorkItem {
     created: string,
     name: string,
     status: number,
-    period: string,
+    period: Period,
     isInvoiced: boolean,
     totalTimeNanoseconds: number,
     isRunning: boolean,
@@ -14,7 +14,19 @@ export interface Period {
     year: number
 }
 
+export interface Timer {
+    hours: number,
+    minutes: number,
+    seconds: number
+}
+
 export interface WorkItemResponse {
     period: Period,
     workItems: WorkItem[]
+}
+
+export interface StatusResponse {
+    isRunning: boolean,
+    deltaDurationNanoseconds: number,
+    workItem: WorkItem
 }

@@ -2,6 +2,9 @@
     import BaseLayout from '../components/BaseLayout.svelte'
     import type { Period, WorkItem, WorkItemResponse } from '../types/models.type'
     import { period } from '../stores/PeriodStore'
+    import { runningWorkItem } from '../stores/RunningWorkItemStore'
+    import toast from 'svelte-french-toast'
+    import { nanosecondsToTime } from '../utils/time'
     import {
         ArrowLeftOutline,
         ArrowRightOutline,
@@ -22,6 +25,7 @@
         Input,
         Select
     } from 'flowbite-svelte'
+    import { onDestroy } from 'svelte'
 
     let workItems: WorkItem[] = []
     let formModal = false
@@ -81,17 +85,38 @@
         }
     }
 
-    const nanosecondsToTime = (nanoseconds: number) => {
-        const inSeconds = nanoseconds / 1000000000
-        const hours = Math.floor(inSeconds / 3600)
-        const minutes = Math.floor((inSeconds - (hours * 3600)) / 60)
-        const seconds = Math.floor(inSeconds - (hours * 3600) - (minutes * 60))
-
-        return {hours, minutes, seconds }
-    }
-
     const formatTime = (time: {hours: number, minutes: number, seconds: number}) => {
         return `${time.hours}h ${time.minutes}m ${time.seconds}s`
+    }
+
+    const startWorkItem = async (workItem: WorkItem) => {
+        const resp = await fetch(`http://localhost:8080/api/workitem/${workItem.id}/start`, {
+            method: 'PATCH'
+        })
+
+        if (!resp.ok) {
+            toast.error(`Failed to start work item with ID: ${workItem.id}`, { duration: 3000 })
+            return
+        }
+
+        workItem.isRunning = true
+        workItems = [...workItems]
+        runningWorkItem.start(workItem)
+        toast.success(`Started work item with ID: ${workItem.id}`, { duration: 3000 })
+    }
+
+    const stopWorkItem = async (workItem: WorkItem) => {
+        const resp = await fetch('http://localhost:8080/api/workitem/stop', {
+            method: 'PATCH'
+        })
+
+        if (!resp.ok) {
+            toast.error(`Failed to stop work item`, { duration: 3000 })
+            return
+        }
+
+        runningWorkItem.stop()
+        toast.success(`Stopped work item with ID: ${workItem.id}`, { duration: 3000 })
     }
 
     const createWorkItem = async (event: SubmitEvent) => {
@@ -120,15 +145,19 @@
             body: JSON.stringify(payload)
         })
 
+        const data = await resp.json() as WorkItem
+
         formModal = false
+        toast.success(`Work item created with ID: ${data.id}`, { duration: 3000 })
 
         if (!($period.year === year || $period.month === month)) {
             return
         }
 
-        getWorkItems($period).then(data => {
+        const p = $period
+        getWorkItems(p).then(data => {
             const responsePeriod = data.period
-            if (responsePeriod.month - 1 !== $period.month || responsePeriod.year !== $period.year) {
+            if (responsePeriod.month - 1 !== p.month || responsePeriod.year !== p.year) {
                 console.error('Periods do not match')
             }
 
@@ -137,7 +166,7 @@
         })
     }
 
-    period.subscribe(value => {
+    const unsubscribePeriod = period.subscribe(value => {
         console.log(value)
 
         getWorkItems(value).then(data => {
@@ -149,6 +178,35 @@
             workItems = data.workItems || []
             console.log(data)
         })
+    })
+
+    const unsubscribeRunningWI = runningWorkItem.subscribe(value => {
+        if (value.isRunning) {
+            return
+        }
+
+        const year = value.workItem?.period.year || 0
+        const month = value.workItem?.period.month || 0
+
+        const p = $period
+        if (!(year === p.year && month - 1 === p.month)) {
+            return
+        }
+
+        getWorkItems(p).then(data => {
+            const responsePeriod = data.period
+            if (responsePeriod.month - 1 !== p.month || responsePeriod.year !== p.year) {
+                console.error('Periods do not match')
+            }
+
+            workItems = data.workItems || []
+            console.log(data)
+        })
+    })
+
+    onDestroy(() => {
+        unsubscribePeriod()
+        unsubscribeRunningWI()
     })
 </script>
 
@@ -190,7 +248,7 @@
                     <TableBodyCell>{workItem.id}</TableBodyCell>
                     <TableBodyCell>{workItem.name}</TableBodyCell>
                     <TableBodyCell>{workItem.created}</TableBodyCell>
-                    <TableBodyCell>{workItem.period}</TableBodyCell>
+                    <TableBodyCell>{workItem.period.year}-{workItem.period.month}</TableBodyCell>
                     <TableBodyCell>{workItemStatusToString(workItem.status)}</TableBodyCell>
                     <TableBodyCell>{workItem.isInvoiced}</TableBodyCell>
                     <TableBodyCell>
@@ -207,8 +265,8 @@
                             </a>
                             {#if workItem.isRunning}
                                 <div
-                                    on:click={() => console.log("stop")}
-                                    on:keypress={() => console.log("stop")}
+                                    on:click={() => stopWorkItem(workItem)}
+                                    on:keypress={() => stop}
                                     class="w-5 h-5 bg-primary-600 dark:bg-primary-500 rounded-sm"
                                     role="button"
                                     tabindex="0"
@@ -216,8 +274,8 @@
                                 </div>
                             {:else}
                                 <div
-                                    on:click={() => console.log("start")}
-                                    on:keypress={() => console.log("start")}
+                                    on:click={() => startWorkItem(workItem)}
+                                    on:keypress={() => startWorkItem(workItem)}
                                     class="font-medium text-primary-600 dark:text-primary-500"
                                     role="button"
                                     tabindex="0"

@@ -13,14 +13,15 @@ const (
 )
 
 type WorkItem struct {
-	ID         uint `gorm:"primarykey"`
-	CreatedAt  time.Time
-	UpdatedAt  time.Time
-	Name       string
-	Status     WorkItemStatus
-	Period     string
-	IsInvoiced bool
-	WorkDays   []WorkDay
+	ID          uint `gorm:"primarykey"`
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+	Name        string
+	Status      WorkItemStatus
+	PeriodYear  int
+	PeriodMonth int
+	IsInvoiced  bool
+	WorkDays    []WorkDay
 }
 
 func (wi WorkItem) GetTotalTime() time.Duration {

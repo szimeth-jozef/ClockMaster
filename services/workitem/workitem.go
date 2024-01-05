@@ -23,10 +23,11 @@ func (s WorkItemService) Create(data request.CreateWorkItemData) (*models.WorkIt
 	}
 
 	workItem := models.WorkItem{
-		Name:       data.Name,
-		Status:     models.Todo,
-		Period:     p.String(),
-		IsInvoiced: false,
+		Name:        data.Name,
+		Status:      models.Todo,
+		PeriodYear:  p.Year,
+		PeriodMonth: p.Month,
+		IsInvoiced:  false,
 	}
 
 	s.DB.Create(&workItem)

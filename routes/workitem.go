@@ -21,4 +21,5 @@ func AddWorkItemRoutes(root *echo.Group, db *gorm.DB) {
 	workItemGroup.PATCH("/:id/start", workItemHandler.StartWorkItem)
 	workItemGroup.PATCH("/stop", workItemHandler.StopWorkItem)
 	workItemGroup.DELETE("/:id", workItemHandler.DeleteWorkItem)
+	workItemGroup.GET("/status", workItemHandler.GetStatus)
 }
