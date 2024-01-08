@@ -6,3 +6,4 @@ Web App To Track Your Precious Time During Work Time
 - [ ] In Create new work item form split init duration field to hours and minutes
 - [ ] Add import/export capability independet from DB engine via media for example csv
 - [ ] Finish work item detailed view
+- [ ] Add pagination to work-item's table
