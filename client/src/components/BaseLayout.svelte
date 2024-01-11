@@ -29,7 +29,7 @@
 <header>
     <Navbar />
 </header>
-<main class="container mx-auto mt-4">
+<main class="container mx-auto mt-4 px-4">
     <slot />
 </main>
 {#if $runningWorkItem.isRunning && !hideRunningWorkItem}

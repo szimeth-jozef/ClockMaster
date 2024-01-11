@@ -126,7 +126,11 @@
         const name = formData.get('name')
         const month = parseInt(String(formData.get('month-period')))
         const year = parseInt(String(formData.get('year-period')))
-        const durationSeconds = parseInt(String(formData.get('duration-minutes')) || '0') * 60
+
+        const durationHours = parseInt(String(formData.get('duration-hours')) || '0')
+        const durationMinutes = parseInt(String(formData.get('duration-minutes')) || '0')
+
+        const durationSeconds = (durationHours * 60 * 60) + (durationMinutes * 60)
 
         const payload = {
             name,
@@ -305,10 +309,24 @@
                     </Label>
                 </div>
             </div>
-            <Label class="space-y-2">
-                <span>Initial total duration in minutes</span>
-                <Input type="number" name="duration-minutes" placeholder="0" />
-            </Label>
+            <div>
+                <Label>Initial total duration</Label>
+                <hr class="my-2" />
+                <div class="grid md:grid-cols-2 md:gap-6">
+                    <div class="relative z-0 w-full group">
+                        <Label class="space-y-2">
+                            <span>Hours</span>
+                            <Input type="number" name="duration-hours" placeholder="0" />
+                        </Label>
+                    </div>
+                    <div class="relative z-0 w-full group">
+                        <Label class="space-y-2">
+                            <span>Minutes</span>
+                            <Input type="number" name="duration-minutes" placeholder="0" />
+                        </Label>
+                    </div>
+                </div>
+            </div>
             <Button type="submit" class="w-full1">Create</Button>
         </form>
     </Modal>

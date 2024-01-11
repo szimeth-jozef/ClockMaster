@@ -22,7 +22,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	db, err := db.Connect("db.sqlite3")
+	db, err := db.Connect(env.DbPath)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -8,7 +8,8 @@ import (
 )
 
 type EnvConfig struct {
-	Port string `envconfig:"PORT" required:"true"`
+	Port   string  `envconfig:"PORT" required:"true"`
+	DbPath *string `envconfig:"DB_PATH" required:"false"`
 }
 
 func New(filename string) (*EnvConfig, error) {
