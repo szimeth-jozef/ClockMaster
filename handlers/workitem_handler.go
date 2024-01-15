@@ -205,6 +205,16 @@ func (h WorkItemHandler) GetStatus(e echo.Context) error {
 	})
 }
 
+func (h WorkItemHandler) GetWorkDays(e echo.Context) error {
+	var workItem models.WorkItem
+	if err := h.DB.Preload("WorkDays").First(&workItem, e.Param("id")).Error; err != nil {
+		log.Error(err)
+		return e.JSON(http.StatusNotFound, nil)
+	}
+
+	return e.JSON(http.StatusOK, workItem.WorkDays)
+}
+
 func (h WorkItemHandler) ExistsRunningWorkItem() bool {
 	var workDays []models.WorkDay
 

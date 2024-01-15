@@ -30,3 +30,12 @@ export interface StatusResponse {
     deltaDurationNanoseconds: number,
     workItem: WorkItem
 }
+
+export interface WorkDay {
+    ID: number,
+    CreatedAt: string,
+    UpdatedAt: string,
+    WorkItemID: number,
+    LastStartedAt: string,
+    TotalDuration: number
+}

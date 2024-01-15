@@ -2,10 +2,22 @@
   import { onDestroy } from 'svelte';
     import BaseLayout from '../components/BaseLayout.svelte'
     import { runningWorkItem } from '../stores/RunningWorkItemStore'
-    import { Heading, Button, Modal } from 'flowbite-svelte'
+    import {
+        Heading,
+        Button,
+        Modal,
+        Table,
+        TableHead,
+        TableBody,
+        TableHeadCell,
+        TableBodyCell,
+        TableBodyRow
+    } from 'flowbite-svelte'
     import { ExclamationCircleOutline } from 'flowbite-svelte-icons'
     import toast from 'svelte-french-toast'
     import { push } from 'svelte-spa-router'
+    import type { WorkDay } from '../types/models.type'
+    import { nanosecondsToTime } from '../utils/time'
 
     export let params: any
 
@@ -13,6 +25,15 @@
 
     let isCurrentRunning = $runningWorkItem.workItem && $runningWorkItem.workItem.id === currentWorkItemID
     let popupModal = false
+    let workDays: WorkDay[] = []
+
+    const getWorkDays = async () => {
+        const resp = await fetch(`http://localhost:8080/api/workitem/${currentWorkItemID}/workday`)
+        const data = await resp.json() as WorkDay[]
+        workDays = data
+        console.log(data)
+    }
+    getWorkDays()
 
     const formatTimerSegment = (segment: number) => {
         return String(segment).padStart(2, '0')
@@ -56,6 +77,10 @@
         isCurrentRunning = value.workItem?.id === currentWorkItemID
     })
 
+    const formatTime = (time: {hours: number, minutes: number, seconds: number}) => {
+        return `${time.hours}h ${time.minutes}m ${time.seconds}s`
+    }
+
     onDestroy(() => {
         unsubscribeRunningWI()
     })
@@ -76,6 +101,34 @@
     {/if}
 
     <Button on:click={() => (popupModal = true)} color="red">Delete</Button>
+    <Button on:click={() => null} color="green">Mark As Done</Button>
+
+    <Table shadow divClass="mt-4">
+        <TableHead>
+            <TableHeadCell>ID</TableHeadCell>
+            <TableHeadCell>Created</TableHeadCell>
+            <TableHeadCell>LastStarted</TableHeadCell>
+            <TableHeadCell>Total time</TableHeadCell>
+            <TableHeadCell>
+                <span class="sr-only">Controls</span>
+            </TableHeadCell>
+        </TableHead>
+        <TableBody>
+            {#each workDays as workDay}
+                <TableBodyRow>
+                    <TableBodyCell>{workDay.ID}</TableBodyCell>
+                    <TableBodyCell>{workDay.CreatedAt}</TableBodyCell>
+                    <TableBodyCell>{workDay.LastStartedAt}</TableBodyCell>
+                    <TableBodyCell>
+                        {formatTime(nanosecondsToTime(workDay.TotalDuration))}
+                    </TableBodyCell>
+                    <TableBodyCell>
+                        Controls
+                    </TableBodyCell>
+                </TableBodyRow>
+            {/each}
+        </TableBody>
+    </Table>
 
     <Modal bind:open={popupModal} size="xs" autoclose>
         <div class="text-center">
