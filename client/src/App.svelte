@@ -27,6 +27,9 @@
         if (data.isRunning) {
             runningWorkItem.start(data.workItem, data.deltaDurationNanoseconds)
         }
+        else {
+            runningWorkItem.stop()
+        }
     }
 
     getStatus()

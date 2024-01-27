@@ -1,16 +1,18 @@
 <script lang="ts">
     import BaseLayout from '../components/BaseLayout.svelte'
+    import StatusBadge from '../components/StatusBadge.svelte'
     import type { Period, WorkItem, WorkItemResponse } from '../types/models.type'
     import { period } from '../stores/PeriodStore'
     import { runningWorkItem } from '../stores/RunningWorkItemStore'
     import toast from 'svelte-french-toast'
-    import { nanosecondsToTime } from '../utils/time'
+    import { formatDateFromString, formatDuration, formatPeriod, nanosecondsToTime } from '../utils/datetime'
     import {
         ArrowLeftOutline,
         ArrowRightOutline,
         ClipboardCheckOutline,
-        PenOutline,
         PlayOutline,
+        DotsVerticalOutline,
+        EyeOutline
     } from 'flowbite-svelte-icons'
     import {
         Button,
@@ -23,11 +25,14 @@
         Modal,
         Label,
         Input,
-        Select
+        Select,
+        Dropdown,
+        DropdownItem
     } from 'flowbite-svelte'
     import { onDestroy } from 'svelte'
 
     let workItems: WorkItem[] = []
+    let currentPeriodTotalTime = "0h 0m 0s"
     let formModal = false
     let createFormSelectedMonth: number = new Date().getMonth() + 1
     let createFormSelectedYear: number = new Date().getFullYear()
@@ -72,23 +77,6 @@
         return date.toLocaleString('default', { month: 'long' })
     }
 
-    const workItemStatusToString = (status: number) => {
-        switch (status) {
-            case 0:
-                return 'ToDo'
-            case 1:
-                return 'InProgress'
-            case 2:
-                return 'Done'
-            default:
-                return 'Unknown'
-        }
-    }
-
-    const formatTime = (time: {hours: number, minutes: number, seconds: number}) => {
-        return `${time.hours}h ${time.minutes}m ${time.seconds}s`
-    }
-
     const startWorkItem = async (workItem: WorkItem) => {
         const resp = await fetch(`http://localhost:8080/api/workitem/${workItem.id}/start`, {
             method: 'PATCH'
@@ -100,6 +88,7 @@
         }
 
         workItem.isRunning = true
+        workItem.status = 1
         workItems = [...workItems]
         runningWorkItem.start(workItem)
         toast.success(`Started work item with ID: ${workItem.id}`, { duration: 3000 })
@@ -175,6 +164,8 @@
             }
 
             workItems = data.workItems || []
+            const totalPeriodTime = workItems.reduce((acc, curr) => acc + curr.totalTimeNanoseconds, 0)
+            currentPeriodTotalTime = formatDuration(nanosecondsToTime(totalPeriodTime))
         })
     })
 
@@ -198,6 +189,8 @@
             }
 
             workItems = data.workItems || []
+            const totalPeriodTime = workItems.reduce((acc, curr) => acc + curr.totalTimeNanoseconds, 0)
+            currentPeriodTotalTime = formatDuration(nanosecondsToTime(totalPeriodTime))
         })
     })
 
@@ -218,9 +211,12 @@
         <Button size="sm" on:click={period.previousPeriod}>
             <ArrowLeftOutline class="w-3.5 h-3.5 me-2" /> Previous
         </Button>
-        <span class="dark:text-gray-400 font-bold w-32">
-            {getMonthName($period.month)} {$period.year}
-        </span>
+        <div class="flex flex-col items-center w-32">
+            <span class="dark:text-gray-400 font-bold">
+                {getMonthName($period.month)} {$period.year}
+            </span>
+            <span class="dark:text-gray-400">{currentPeriodTotalTime}</span>
+        </div>
         <Button size="sm" on:click={period.nextPeriod}>
             Next <ArrowRightOutline class="w-3.5 h-3.5 ms-2" />
         </Button>
@@ -244,22 +240,17 @@
                 <TableBodyRow>
                     <TableBodyCell>{workItem.id}</TableBodyCell>
                     <TableBodyCell>{workItem.name}</TableBodyCell>
-                    <TableBodyCell>{workItem.created}</TableBodyCell>
-                    <TableBodyCell>{workItem.period.year}-{workItem.period.month}</TableBodyCell>
-                    <TableBodyCell>{workItemStatusToString(workItem.status)}</TableBodyCell>
+                    <TableBodyCell>{formatDateFromString(workItem.created)}</TableBodyCell>
+                    <TableBodyCell>{formatPeriod(workItem.period)}</TableBodyCell>
+                    <TableBodyCell>
+                        <StatusBadge statusCode={workItem.status} />
+                    </TableBodyCell>
                     <TableBodyCell>{workItem.isInvoiced}</TableBodyCell>
                     <TableBodyCell>
-                        {formatTime(nanosecondsToTime(workItem.totalTimeNanoseconds))}
+                        {formatDuration(nanosecondsToTime(workItem.totalTimeNanoseconds))}
                     </TableBodyCell>
                     <TableBodyCell>
                         <div class="flex justify-between">
-                            <a
-                                href={`#/workitem/${workItem.id}`}
-                                class="font-medium text-primary-600 dark:text-primary-500"
-                                title="Edit"
-                            >
-                                <PenOutline />
-                            </a>
                             {#if workItem.isRunning}
                                 <div
                                     on:click={() => stopWorkItem(workItem)}
@@ -281,6 +272,21 @@
                                     <PlayOutline />
                                 </div>
                             {/if}
+                            <a
+                                href={`#/workitem/${workItem.id}`}
+                                class="font-medium text-primary-600 dark:text-primary-500"
+                                title="Edit"
+                            >
+                                <EyeOutline />
+                            </a>
+                            <DotsVerticalOutline class="dots-menu text-primary-600 dark:text-primary-500 cursor-pointer" />
+                            <Dropdown triggeredBy=".dots-menu">
+                                <DropdownItem>Move to next</DropdownItem>
+                                <DropdownItem>Move to previous</DropdownItem>
+                                <DropdownItem>Mark as done</DropdownItem>
+                                <DropdownItem>Edit</DropdownItem>
+                                <DropdownItem class="text-red-500">Delete</DropdownItem>
+                            </Dropdown>
                         </div>
                     </TableBodyCell>
                 </TableBodyRow>

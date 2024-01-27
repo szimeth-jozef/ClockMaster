@@ -59,6 +59,27 @@ func (h WorkItemHandler) GetWorkItems(e echo.Context) error {
 	return e.JSON(http.StatusOK, response)
 }
 
+func (h WorkItemHandler) GetWorkItem(e echo.Context) error {
+	var workItem models.WorkItem
+	if err := h.DB.Preload("WorkDays").First(&workItem, e.Param("id")).Error; err != nil {
+		log.Error(err)
+		return e.JSON(http.StatusNotFound, nil)
+	}
+
+	response := response.WorkItemResponse{
+		ID:                   workItem.ID,
+		Created:              workItem.CreatedAt,
+		Name:                 workItem.Name,
+		Status:               workItem.Status,
+		Period:               period.InvoicePeriod{Year: workItem.PeriodYear, Month: workItem.PeriodMonth},
+		IsInvoiced:           workItem.IsInvoiced,
+		TotalTimeNanoseconds: workItem.GetTotalTime(),
+		IsRunning:            workItem.IsRunning(),
+	}
+
+	return e.JSON(http.StatusOK, response)
+}
+
 func (h WorkItemHandler) CreateWorkItem(e echo.Context) error {
 	var workItemData request.CreateWorkItemData
 	if err := e.Bind(&workItemData); err != nil {

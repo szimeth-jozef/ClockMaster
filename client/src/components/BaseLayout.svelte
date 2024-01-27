@@ -3,12 +3,9 @@
     import { Card, P, Heading, Button } from 'flowbite-svelte'
     import { runningWorkItem } from '../stores/RunningWorkItemStore'
     import toast from 'svelte-french-toast'
+  import { formatPeriod, formatTimer } from '../utils/datetime';
 
     export let hideRunningWorkItem: boolean = false
-
-    const formatTimerSegment = (segment: number) => {
-        return String(segment).padStart(2, '0')
-    }
 
     const stopTimer = async () => {
         const resp = await fetch('http://localhost:8080/api/workitem/stop', {
@@ -34,11 +31,13 @@
 </main>
 {#if $runningWorkItem.isRunning && !hideRunningWorkItem}
     <Card class="fixed bottom-4 left-4">
-        <P class="text-center" weight="bold">{$runningWorkItem.workItem?.period.year}-{$runningWorkItem.workItem?.period.month}</P>
         <P class="text-center" weight="semibold">#{$runningWorkItem.workItem?.id}</P>
+        <P class="text-center" weight="bold">
+            {formatPeriod($runningWorkItem.workItem?.period || { year: 0, month: 0 })}
+        </P>
         <P class="text-center">{$runningWorkItem.workItem?.name}</P>
         <Heading level="3" class="text-center mb-4 min-w-64">
-            {formatTimerSegment($runningWorkItem.timer?.hours || 0)}:{formatTimerSegment($runningWorkItem.timer?.minutes || 0)}:{formatTimerSegment($runningWorkItem.timer?.seconds || 0)}
+            {formatTimer($runningWorkItem.timer || { hours: 0, minutes: 0, seconds: 0 })}
         </Heading>
         <Button class="w-full" on:click={stopTimer}>Stop</Button>
     </Card>

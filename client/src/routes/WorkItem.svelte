@@ -1,6 +1,7 @@
 <script lang="ts">
-  import { onDestroy } from 'svelte';
+    import { onDestroy } from 'svelte';
     import BaseLayout from '../components/BaseLayout.svelte'
+    import StatusBadge from '../components/StatusBadge.svelte'
     import { runningWorkItem } from '../stores/RunningWorkItemStore'
     import {
         Heading,
@@ -11,13 +12,22 @@
         TableBody,
         TableHeadCell,
         TableBodyCell,
-        TableBodyRow
+        TableBodyRow,
+        Dropdown,
+        DropdownItem,
+        Card,
+        ButtonGroup,
+        Skeleton,
+
+        P
+
     } from 'flowbite-svelte'
-    import { ExclamationCircleOutline } from 'flowbite-svelte-icons'
+    import { DotsVerticalOutline, ExclamationCircleOutline } from 'flowbite-svelte-icons'
     import toast from 'svelte-french-toast'
     import { push } from 'svelte-spa-router'
-    import type { WorkDay } from '../types/models.type'
-    import { nanosecondsToTime } from '../utils/time'
+    import type { WorkDay, WorkItem } from '../types/models.type'
+    import { formatDateFromString, formatDateTimeFromString, formatDuration, formatTimer, nanosecondsToTime } from '../utils/datetime'
+    import { getWorkDays, getWorkItem } from '../utils/requests'
 
     export let params: any
 
@@ -26,18 +36,19 @@
     let isCurrentRunning = $runningWorkItem.workItem && $runningWorkItem.workItem.id === currentWorkItemID
     let popupModal = false
     let workDays: WorkDay[] = []
+    let workItem: WorkItem | null = null
 
-    const getWorkDays = async () => {
-        const resp = await fetch(`http://localhost:8080/api/workitem/${currentWorkItemID}/workday`)
-        const data = await resp.json() as WorkDay[]
-        workDays = data
-        console.log(data)
-    }
-    getWorkDays()
+    getWorkDays(currentWorkItemID)
+        .then(data => {
+            workDays = data
+            console.log(data)
+        })
 
-    const formatTimerSegment = (segment: number) => {
-        return String(segment).padStart(2, '0')
-    }
+    getWorkItem(currentWorkItemID)
+        .then(data => {
+            workItem = data
+            console.log(data)
+        })
 
     const stopTimer = async () => {
         const resp = await fetch('http://localhost:8080/api/workitem/stop', {
@@ -48,6 +59,18 @@
             toast.error(`Failed to stop work item`, { duration: 3000 })
             return
         }
+
+        getWorkDays(currentWorkItemID)
+            .then(data => {
+                workDays = data
+                console.log(data)
+            })
+
+        getWorkItem(currentWorkItemID)
+            .then(data => {
+                workItem = data
+                console.log(data)
+            })
 
         const wiId = $runningWorkItem.workItem?.id
         runningWorkItem.stop()
@@ -77,38 +100,47 @@
         isCurrentRunning = value.workItem?.id === currentWorkItemID
     })
 
-    const formatTime = (time: {hours: number, minutes: number, seconds: number}) => {
-        return `${time.hours}h ${time.minutes}m ${time.seconds}s`
-    }
-
     onDestroy(() => {
         unsubscribeRunningWI()
     })
 </script>
 
 <BaseLayout hideRunningWorkItem={isCurrentRunning}>
-    {#if isCurrentRunning}
-        <Heading level="1" class="text-center">
-            {formatTimerSegment($runningWorkItem.timer?.hours || 0)}:{formatTimerSegment($runningWorkItem.timer?.minutes || 0)}:{formatTimerSegment($runningWorkItem.timer?.seconds || 0)}
-        </Heading>
-    {/if}
 
+    <Card class="max-w-none">
+        {#if isCurrentRunning}
+            <Heading level="1" class="text-center mb-6">
+                {formatTimer($runningWorkItem.timer || { hours: 0, minutes: 0, seconds: 0 })}
+            </Heading>
+        {/if}
 
-    {#if isCurrentRunning}
-        <Button on:click={stopTimer}>Stop</Button>
-    {:else}
-        <Button>Start</Button>
-    {/if}
+        {#if workItem}
+            <div class="grid gap-2 grid-cols-1 justify-items-center">
+                <Heading level="2" class="text-center mb-2" tag="h3">{workItem.name}</Heading>
+                <StatusBadge statusCode={workItem.status} />
+                <P>Total Time: {formatDuration(nanosecondsToTime(workItem.totalTimeNanoseconds))}</P>
+            </div>
+        {:else}
+            <Skeleton class="max-w-none" />
+        {/if}
+    </Card>
 
-    <Button on:click={() => (popupModal = true)} color="red">Delete</Button>
-    <Button on:click={() => null} color="green">Mark As Done</Button>
+    <ButtonGroup class="flex justify-end space-x-px mt-4">
+        {#if isCurrentRunning}
+            <Button color="primary" on:click={stopTimer}>Stop</Button>
+        {:else}
+            <Button color="primary">Start</Button>
+        {/if}
+        <Button color="primary">Mark As Done</Button>
+        <Button color="red" on:click={() => (popupModal = true)}>Delete</Button>
+    </ButtonGroup>
 
     <Table shadow divClass="mt-4">
         <TableHead>
             <TableHeadCell>ID</TableHeadCell>
             <TableHeadCell>Created</TableHeadCell>
-            <TableHeadCell>LastStarted</TableHeadCell>
-            <TableHeadCell>Total time</TableHeadCell>
+            <TableHeadCell>Last Started</TableHeadCell>
+            <TableHeadCell>Total Time</TableHeadCell>
             <TableHeadCell>
                 <span class="sr-only">Controls</span>
             </TableHeadCell>
@@ -117,13 +149,17 @@
             {#each workDays as workDay}
                 <TableBodyRow>
                     <TableBodyCell>{workDay.ID}</TableBodyCell>
-                    <TableBodyCell>{workDay.CreatedAt}</TableBodyCell>
-                    <TableBodyCell>{workDay.LastStartedAt}</TableBodyCell>
+                    <TableBodyCell>{formatDateFromString(workDay.CreatedAt)}</TableBodyCell>
+                    <TableBodyCell>{formatDateTimeFromString(workDay.LastStartedAt)}</TableBodyCell>
                     <TableBodyCell>
-                        {formatTime(nanosecondsToTime(workDay.TotalDuration))}
+                        {formatDuration(nanosecondsToTime(workDay.TotalDuration))}
                     </TableBodyCell>
                     <TableBodyCell>
-                        Controls
+                        <DotsVerticalOutline class="dots-menu text-primary-600 dark:text-primary-500 cursor-pointer ml-auto" />
+                        <Dropdown triggeredBy=".dots-menu">
+                            <DropdownItem>Edit</DropdownItem>
+                            <DropdownItem class="text-red-500">Delete</DropdownItem>
+                        </Dropdown>
                     </TableBodyCell>
                 </TableBodyRow>
             {/each}

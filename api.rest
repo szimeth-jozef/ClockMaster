@@ -1,8 +1,15 @@
+# Get list of work items for a given month/period
 GET http://localhost:8080/api/workitem?year=2023&month=12 HTTP/1.1
 Accept: application/json
 
 ###
 
+# Get a work item
+GET http://localhost:8080/api/workitem/3 HTTP/1.1
+
+###
+
+# Create a new work item
 POST http://localhost:8080/api/workitem HTTP/1.1
 Content-Type: application/json
 
@@ -15,20 +22,25 @@ Content-Type: application/json
 
 ###
 
+# Start the timer for a work item
 PATCH http://localhost:8080/api/workitem/4/start HTTP/1.1
 
 ###
 
+# Stop any running timer
 PATCH http://localhost:8080/api/workitem/stop HTTP/1.1
 
 ###
 
+# Delete a work item
 DELETE http://localhost:8080/api/workitem/3 HTTP/1.1
 
 ###
 
+# Get the status of the application
 GET http://localhost:8080/api/workitem/status HTTP/1.1
 
 ###
 
+# Get list of work days for a given work item
 GET http://localhost:8080/api/workitem/1/workday HTTP/1.1

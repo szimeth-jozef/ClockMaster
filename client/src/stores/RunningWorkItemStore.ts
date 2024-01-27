@@ -1,6 +1,6 @@
 import { writable } from 'svelte/store'
 import type { WorkItem, Timer } from '../types/models.type'
-import { nanosecondsToTime } from '../utils/time'
+import { nanosecondsToTime } from '../utils/datetime'
 
 
 export interface RunningWorkItemContext {

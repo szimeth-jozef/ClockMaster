@@ -17,6 +17,7 @@ func AddWorkItemRoutes(root *echo.Group, db *gorm.DB) {
 	workItemGroup := root.Group("/workitem")
 
 	workItemGroup.GET("", workItemHandler.GetWorkItems)
+	workItemGroup.GET("/:id", workItemHandler.GetWorkItem)
 	workItemGroup.POST("", workItemHandler.CreateWorkItem)
 	workItemGroup.PATCH("/:id/start", workItemHandler.StartWorkItem)
 	workItemGroup.PATCH("/stop", workItemHandler.StopWorkItem)
