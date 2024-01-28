@@ -236,6 +236,54 @@ func (h WorkItemHandler) GetWorkDays(e echo.Context) error {
 	return e.JSON(http.StatusOK, workItem.WorkDays)
 }
 
+func (h WorkItemHandler) MarkAsDone(e echo.Context) error {
+	var workItem models.WorkItem
+	if err := h.DB.Preload("WorkDays").First(&workItem, e.Param("id")).Error; err != nil {
+		log.Error(err)
+		return e.JSON(http.StatusNotFound, nil)
+	}
+
+	var markAsDoneData request.MarkAsDoneRequest
+	if err := e.Bind(&markAsDoneData); err != nil {
+		log.Error(err)
+		return e.JSON(http.StatusBadRequest, nil)
+	}
+
+	// Work item cannot be marked as done when
+	// - it is is running
+	if workItem.IsRunning() {
+		log.Error("cannot mark as done a work item that is running")
+		return e.JSON(http.StatusBadRequest, "cannot mark as done a work item that is running")
+	}
+
+	// Validation
+	if len(workItem.WorkDays) != len(markAsDoneData.WorkDays) {
+		log.Error("work day count mismatch")
+		return e.JSON(http.StatusBadRequest, "work day count mismatch")
+	}
+
+	for _, workDayData := range markAsDoneData.WorkDays {
+		dbWorkDay := workItem.GetWorkDayByID(workDayData.WorkDayID)
+		if dbWorkDay == nil {
+			log.Error("specified work day is not part of the work item")
+			return e.JSON(http.StatusBadRequest, "specified work day is not part of the work item")
+		}
+	}
+
+	// Update the work days
+	for _, workDayData := range markAsDoneData.WorkDays {
+		dbWorkDay := workItem.GetWorkDayByID(workDayData.WorkDayID)
+		dbWorkDay.TotalDuration = time.Duration(workDayData.RoundedDurationInHours) * time.Hour
+		h.DB.Save(&dbWorkDay)
+	}
+
+	// Update the work item
+	workItem.Status = models.Done
+	h.DB.Save(&workItem)
+
+	return e.JSON(http.StatusOK, nil)
+}
+
 func (h WorkItemHandler) ExistsRunningWorkItem() bool {
 	var workDays []models.WorkDay
 

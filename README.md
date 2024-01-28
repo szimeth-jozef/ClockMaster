@@ -2,12 +2,14 @@
 Web App To Track Your Precious Time During Work Time
 
 ## TODO
-- [ ] Add make work item as done functionality
+- [ ] Add move work item to another period functionality
 - [ ] Add edit work day functionality
+- [ ] Improve mark done modal UI
 - [ ] Add edit work item functionality
 - [ ] Add delete work day functionality
 - [ ] Add import/export capability independet from DB engine via media for example csv
 - [ ] Add pagination to work-item's table
+- [x] Add make work item as done functionality
 - [x] Create work day's table
 - [x] Show total work time for each period
 - [x] Add colored status to work item's table

@@ -2,6 +2,7 @@
     import { onDestroy } from 'svelte';
     import BaseLayout from '../components/BaseLayout.svelte'
     import StatusBadge from '../components/StatusBadge.svelte'
+    import MarkDoneModal from '../components/MarkDoneModal.svelte'
     import { runningWorkItem } from '../stores/RunningWorkItemStore'
     import {
         Heading,
@@ -18,9 +19,7 @@
         Card,
         ButtonGroup,
         Skeleton,
-
         P
-
     } from 'flowbite-svelte'
     import { DotsVerticalOutline, ExclamationCircleOutline } from 'flowbite-svelte-icons'
     import toast from 'svelte-french-toast'
@@ -28,21 +27,26 @@
     import type { WorkDay, WorkItem } from '../types/models.type'
     import { formatDateFromString, formatDateTimeFromString, formatDuration, formatTimer, nanosecondsToTime } from '../utils/datetime'
     import { getWorkDays, getWorkItem } from '../utils/requests'
+    import { WorkItemStatus } from '../utils/workitemstatus'
 
     export let params: any
 
     const currentWorkItemID = parseInt(params.id)
 
     let isCurrentRunning = $runningWorkItem.workItem && $runningWorkItem.workItem.id === currentWorkItemID
-    let popupModal = false
+    let deletePopupModal = false
+    let makeDonePopupModal = false
     let workDays: WorkDay[] = []
     let workItem: WorkItem | null = null
 
-    getWorkDays(currentWorkItemID)
-        .then(data => {
-            workDays = data
-            console.log(data)
-        })
+    $: {
+        workItem = workItem
+        getWorkDays(currentWorkItemID)
+            .then(data => {
+                workDays = data
+                console.log(data)
+            })
+    }
 
     getWorkItem(currentWorkItemID)
         .then(data => {
@@ -100,6 +104,15 @@
         isCurrentRunning = value.workItem?.id === currentWorkItemID
     })
 
+    const markDoneAction = () => {
+        if (isCurrentRunning) {
+            toast.error(`Cannot mark as done while timer is running`, { duration: 3000 })
+            return
+        }
+
+        makeDonePopupModal = true
+    }
+
     onDestroy(() => {
         unsubscribeRunningWI()
     })
@@ -112,11 +125,16 @@
             <Heading level="1" class="text-center mb-6">
                 {formatTimer($runningWorkItem.timer || { hours: 0, minutes: 0, seconds: 0 })}
             </Heading>
+        {:else}
+            <Heading level="1" class="text-center mb-6">
+                -- : -- : --
+            </Heading>
         {/if}
 
         {#if workItem}
             <div class="grid gap-2 grid-cols-1 justify-items-center">
                 <Heading level="2" class="text-center mb-2" tag="h3">{workItem.name}</Heading>
+                <P>#{workItem.id}</P>
                 <StatusBadge statusCode={workItem.status} />
                 <P>Total Time: {formatDuration(nanosecondsToTime(workItem.totalTimeNanoseconds))}</P>
             </div>
@@ -131,8 +149,8 @@
         {:else}
             <Button color="primary">Start</Button>
         {/if}
-        <Button color="primary">Mark As Done</Button>
-        <Button color="red" on:click={() => (popupModal = true)}>Delete</Button>
+        <Button color="primary" on:click={markDoneAction} disabled={!workItem || workItem.status === WorkItemStatus.Done || isCurrentRunning}>Mark As Done</Button>
+        <Button color="red" on:click={() => (deletePopupModal = true)}>Delete</Button>
     </ButtonGroup>
 
     <Table shadow divClass="mt-4">
@@ -150,7 +168,7 @@
                 <TableBodyRow>
                     <TableBodyCell>{workDay.ID}</TableBodyCell>
                     <TableBodyCell>{formatDateFromString(workDay.CreatedAt)}</TableBodyCell>
-                    <TableBodyCell>{formatDateTimeFromString(workDay.LastStartedAt)}</TableBodyCell>
+                    <TableBodyCell>{workDay.LastStartedAt === null ? '-' : formatDateTimeFromString(workDay.LastStartedAt)}</TableBodyCell>
                     <TableBodyCell>
                         {formatDuration(nanosecondsToTime(workDay.TotalDuration))}
                     </TableBodyCell>
@@ -166,14 +184,16 @@
         </TableBody>
     </Table>
 
-    <Modal bind:open={popupModal} size="xs" autoclose>
+    <Modal bind:open={deletePopupModal} size="xs" autoclose>
         <div class="text-center">
-          <ExclamationCircleOutline class="mx-auto mb-4 text-gray-400 w-12 h-12 dark:text-gray-200" />
-          <h3 class="mb-5 text-lg font-normal text-gray-500 dark:text-gray-400">Are you sure you want to delete this work item?</h3>
-          <Button on:click={deleteWorkItem} color="red" class="me-2">Yes, I'm sure</Button>
-          <Button color="alternative">No, cancel</Button>
+            <ExclamationCircleOutline class="mx-auto mb-4 text-gray-400 w-12 h-12 dark:text-gray-200" />
+            <Heading tag="h5" class="mb-5">Are you sure you want to delete this work item?</Heading>
+            <Button on:click={deleteWorkItem} color="red" class="me-2">Yes, I'm sure</Button>
+            <Button color="alternative">No, cancel</Button>
         </div>
-      </Modal>
+    </Modal>
+
+    <MarkDoneModal bind:isOpen={makeDonePopupModal} bind:workItem={workItem} />
 </BaseLayout>
 
 <style>

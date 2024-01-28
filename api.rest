@@ -44,3 +44,17 @@ GET http://localhost:8080/api/workitem/status HTTP/1.1
 
 # Get list of work days for a given work item
 GET http://localhost:8080/api/workitem/1/workday HTTP/1.1
+
+###
+
+# Mark a work item as done
+PATCH http://localhost:8080/api/workitem/2/done HTTP/1.1
+Content-Type: application/json
+
+{
+  "workdays": [
+    {"workday_id": 1, "rounded_duration_in_hours": 8},
+    {"workday_id": 3, "rounded_duration_in_hours": 2},
+    {"workday_id": 7, "rounded_duration_in_hours": 0}
+  ]
+}

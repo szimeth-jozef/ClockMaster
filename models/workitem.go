@@ -49,3 +49,13 @@ func (wi WorkItem) IsRunning() bool {
 	}
 	return false
 }
+
+func (wi WorkItem) GetWorkDayByID(id uint) *WorkDay {
+	for _, workDay := range wi.WorkDays {
+		if workDay.ID == id {
+			return &workDay
+		}
+	}
+
+	return nil
+}

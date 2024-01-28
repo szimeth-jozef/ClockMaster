@@ -44,4 +44,13 @@ export const formatDateTime = (date: Date) => {
     return date.toLocaleString(LOCALE, options)
 }
 
+export const getSuggestedHours = (totalTimeNanoseconds: number) => {
+    let { hours, minutes, seconds } = nanosecondsToTime(totalTimeNanoseconds)
+
+    if (seconds >= 30) minutes++
+    if (minutes >= 30) hours++
+
+    return hours
+}
+
 const pad = (n: number) => n.toString().padStart(2, '0')
