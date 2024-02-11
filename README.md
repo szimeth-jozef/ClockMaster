@@ -2,6 +2,7 @@
 Web App To Track Your Precious Time During Work Time
 
 ## TODO
+- [ ] Add info tiles to period's
 - [ ] Add move work item to another period functionality
 - [ ] Add edit work day functionality
 - [ ] Improve mark done modal UI

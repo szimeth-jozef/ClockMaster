@@ -12,7 +12,8 @@
         ClipboardCheckOutline,
         PlayOutline,
         DotsVerticalOutline,
-        EyeOutline
+        EyeOutline,
+        ReceiptOutline
     } from 'flowbite-svelte-icons'
     import {
         Button,
@@ -27,13 +28,16 @@
         Input,
         Select,
         Dropdown,
-        DropdownItem
+        DropdownItem,
+        Card,
     } from 'flowbite-svelte'
     import { onDestroy } from 'svelte'
+    import DeleteWorkItemModal from '../components/DeleteWorkItemModal.svelte';
 
     let workItems: WorkItem[] = []
     let currentPeriodTotalTime = "0h 0m 0s"
     let formModal = false
+    const deleteModal = { isOpen: false, workItemId: -1 }
     let createFormSelectedMonth: number = new Date().getMonth() + 1
     let createFormSelectedYear: number = new Date().getFullYear()
 
@@ -156,6 +160,11 @@
         })
     }
 
+    const openDeleteModal = (workItem: WorkItem) => {
+        deleteModal.isOpen = true
+        deleteModal.workItemId = workItem.id
+    }
+
     const unsubscribePeriod = period.subscribe(value => {
         getWorkItems(value).then(data => {
             const responsePeriod = data.period
@@ -202,9 +211,18 @@
 
 <BaseLayout>
     <div class="flex justify-end">
-        <Button size="md" on:click={() => (formModal = true)}>
+        <Button size="md" class="mr-4" on:click={() => (formModal = true)}>
             New Work Item <ClipboardCheckOutline class="w-3.5 h-3.5 ms-2" />
         </Button>
+        <Button size="md" on:click={() => alert('TODO')}>
+            Create Invoce <ReceiptOutline class="w-3.5 h-3.5 ms-2" />
+        </Button>
+    </div>
+
+    <div class="flex flex-row justify-evenly mt-8">
+        <Card class="border-blue-500 dark:border-blue-500 text-blue-500 dark:text-blue-500 w-60">Total Time</Card>
+        <Card class="border-green-500 dark:border-green-500 text-green-500 dark:text-green-500 w-60">Total Time Done</Card>
+        <Card class="max-w-none w-60">Current DevOps Invoice ID</Card>
     </div>
 
     <div class="flex items-center justify-evenly mt-8">
@@ -279,13 +297,15 @@
                             >
                                 <EyeOutline />
                             </a>
-                            <DotsVerticalOutline class="dots-menu text-primary-600 dark:text-primary-500 cursor-pointer" />
-                            <Dropdown triggeredBy=".dots-menu">
+                            <DotsVerticalOutline id="dots-menu-{workItem.id}" class="text-primary-600 dark:text-primary-500 cursor-pointer" />
+                            <Dropdown triggeredBy="#dots-menu-{workItem.id}">
                                 <DropdownItem>Move to next</DropdownItem>
                                 <DropdownItem>Move to previous</DropdownItem>
                                 <DropdownItem>Mark as done</DropdownItem>
                                 <DropdownItem>Edit</DropdownItem>
-                                <DropdownItem class="text-red-500">Delete</DropdownItem>
+                                <DropdownItem class="text-red-500" on:click={() => openDeleteModal(workItem)}>
+                                    Delete
+                                </DropdownItem>
                             </Dropdown>
                         </div>
                     </TableBodyCell>
@@ -336,6 +356,8 @@
             <Button type="submit" class="w-full1">Create</Button>
         </form>
     </Modal>
+
+    <DeleteWorkItemModal bind:isOpen={deleteModal.isOpen} bind:workItemId={deleteModal.workItemId} afterDelete={() => (workItems = workItems.filter((wi) => wi.id !== deleteModal.workItemId))} />
 </BaseLayout>
 
 <style>
